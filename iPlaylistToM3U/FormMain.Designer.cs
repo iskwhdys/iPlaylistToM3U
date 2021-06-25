@@ -47,7 +47,6 @@
 			this.tbCopyTarget = new System.Windows.Forms.TextBox();
 			this.btnOpenCopyTarget = new System.Windows.Forms.Button();
 			this.ofdTargetFolder = new System.Windows.Forms.FolderBrowserDialog();
-			this.button1 = new System.Windows.Forms.Button();
 			this.panel1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
@@ -229,22 +228,11 @@
 			// 
 			this.ofdTargetFolder.RootFolder = System.Environment.SpecialFolder.MyComputer;
 			// 
-			// button1
-			// 
-			this.button1.Location = new System.Drawing.Point(340, 430);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(75, 23);
-			this.button1.TabIndex = 9;
-			this.button1.Text = "button1";
-			this.button1.UseVisualStyleBackColor = true;
-			this.button1.Click += new System.EventHandler(this.button1_Click);
-			// 
 			// FormMain
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(624, 471);
-			this.Controls.Add(this.button1);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.lblStatus);
 			this.Controls.Add(this.btnCopy);
@@ -288,7 +276,6 @@
 		private System.Windows.Forms.TextBox tbCopyTarget;
 		private System.Windows.Forms.Button btnOpenCopyTarget;
 		private System.Windows.Forms.FolderBrowserDialog ofdTargetFolder;
-		private System.Windows.Forms.Button button1;
 	}
 }
 

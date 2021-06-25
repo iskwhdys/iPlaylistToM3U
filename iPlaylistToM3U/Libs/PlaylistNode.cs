@@ -21,12 +21,6 @@ namespace musikkuLibrary.Libs {
 
 		}
 
-		public void SetTrackItem(Library lib) {
-			if (Playlist.Tracks == null) return;
-			var ids = new List<int>();
-
-		}
-
 
 
 

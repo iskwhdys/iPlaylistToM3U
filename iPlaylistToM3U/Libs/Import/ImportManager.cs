@@ -47,7 +47,6 @@ namespace musikkuLibrary.Libs.Import {
 					foreach (XmlNode child in (pl.Tag as XmlNode).ChildNodes) {
 						if (child.Name == "PlaylistPersistentID" && child.InnerText == parentId) {
 							p.ParentId = pl.Id;
-							if (pl.Childs == null) pl.Childs = new List<int>();
 							pl.Childs.Add(p.Id);
 							break;
 						}

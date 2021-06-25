@@ -61,9 +61,7 @@ namespace iPlaylistToM3U
 			foreach (var child in lib.Playlists.Where(p => p.ParentId == id)) {
 
 				var node = new PlaylistNode(child);
-
-				node.SetTrackItem(lib);
-
+				
 				tnc.Add(node);
 
 				SetPlaylist(lib, node.Nodes, child.Id);

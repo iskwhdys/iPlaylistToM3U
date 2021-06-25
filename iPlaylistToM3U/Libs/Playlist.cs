@@ -14,10 +14,10 @@ namespace musikkuLibrary.Libs {
 		public string Name { get; set; }
 		public string Description { get; set; }
 		public EPlaylistType Type { get; set; }
-		public List<int> Tracks { get; set; }
-		public List<int> Childs { get; set; }
+		public List<int> Tracks { get; set; } = new List<int>();
+		public List<int> Childs { get; set; } = new List<int>();
 
-        [XmlIgnore]
+		[XmlIgnore]
         public object Tag { get; set; }
 
 		public bool Open { get; set; } 
