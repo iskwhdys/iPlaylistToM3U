@@ -183,7 +183,9 @@ namespace musikkuLibrary.Libs.Import {
 
 			var str = new List<string>();
 			foreach (XmlNode arr in dict.ChildNodes[dict.ChildNodes.Count - 1].ChildNodes) {
-				str.Add(arr.ChildNodes[1].InnerText);
+				if (arr.ChildNodes.Count > 1) {
+					str.Add(arr.ChildNodes[1].InnerText);
+				}
 
 			}
 

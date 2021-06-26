@@ -205,11 +205,11 @@ namespace iPlaylistToM3U
 				CreatePlaylistFile(playlistPath, "../PlaylistItem/", playlist, e);
 			}
 
-			var copyTrack = new List<int>();
+			var copyTrack = new List<string>();
 			foreach (var playlist in library.Playlists.Where(p => p.Check)) {
 				foreach (var track in GetCheckedPlaylistTrack(playlist)) {
-					if (copyTrack.Contains(track.Id) == false) {
-						copyTrack.Add(track.Id);
+					if (copyTrack.Contains(track.PersistentID) == false) {
+						copyTrack.Add(track.PersistentID);
 					}
 				}
 			}
@@ -217,7 +217,7 @@ namespace iPlaylistToM3U
 			string playlistItemPath = Path.Combine(tbCopyTarget.Text, "PlaylistItem");
 
 			foreach (var file in Directory.GetFiles(playlistItemPath, "*", SearchOption.AllDirectories)) {
-				int existFileId = int.Parse(Path.GetFileNameWithoutExtension(file));
+				string existFileId = Path.GetFileNameWithoutExtension(file);
 				if (copyTrack.Contains(existFileId) == false) {
 					File.Delete(file);
 				}
@@ -228,10 +228,10 @@ namespace iPlaylistToM3U
 
 
 			for (int i = 0; i < copyTrack.Count; i++) {
-				int id = copyTrack[i];
-				var track = library.Tracks.First(t => t.Id == id);
+				string id = copyTrack[i];
+				var track = library.Tracks.First(t => t.PersistentID == id);
 
-				string dstDir = GetPlaylistItemPath(playlistItemPath, id);
+				string dstDir = GetPlaylistItemPath(playlistItemPath, track.PersistentID);
 				if (Directory.Exists(dstDir) == false) {
 					Directory.CreateDirectory(dstDir);
 				}
@@ -248,12 +248,12 @@ namespace iPlaylistToM3U
 			}
 		}
 
-		private string GetPlaylistItemIds(int num) {
-			return String.Join("/", num.ToString().Reverse()) + "/";
+		private string GetPlaylistItemIds(string id) {
+			return String.Join("/", id.Take(2).Select(c => c)) + "/";
 		}
 
-		private string GetPlaylistItemPath(string orgPath, int num) {
-			return  Path.Combine(orgPath, Path.Combine( num.ToString().Reverse().Select(c => c.ToString()).ToArray()));
+		private string GetPlaylistItemPath(string orgPath, string id) {
+			return  Path.Combine(orgPath, Path.Combine(id.Take(2).Select(c => c.ToString()).ToArray()));
 		}
 
 
@@ -293,26 +293,24 @@ namespace iPlaylistToM3U
 			bgwCopy.ReportProgress(0, "ステップ(2/3) プレイリスト作成中(" + PlaylistCreateCount + "/" + PlaylistCreateMax + ")...");
 
 			if (playlist.Check == false) return;
-			string m3uPath;
-			string playlistName = RemoveInvalidPathCharacter(playlist.Name);
 
-			var str = new StringBuilder();
+			string playlistName = RemoveInvalidPathCharacter(playlist.Name);
+			string m3uPath;
+			IEnumerable<Track> tracks;
 
 			if (playlist.Type == EPlaylistType.Folder) {
 				m3uPath = Path.Combine(currentPath, "_" + playlistName + ".m3u");
-				foreach (var track in GetCheckedPlaylistTrack(playlist)) {
-					str.AppendLine("#EXTINF:-1," + (track.Artist == "" ? "アーティスト名なし" : track.Artist.Replace("-", "_")) + " - " + track.Name.Replace("-", "_"));
-					str.AppendLine(relativePath + GetPlaylistItemIds(track.Id) + track.Id + Path.GetExtension(track.Location));
-				}
+				tracks = GetCheckedPlaylistTrack(playlist);
 			}
 			else {
 				m3uPath = Path.Combine(currentPath, playlistName + ".m3u");
+				tracks = playlist.Tracks.Select(id => library.Tracks.First(t => t.Id == id));
+			}
 
-				foreach (var id in playlist.Tracks) {
-					Track track = library.Tracks.First(t => t.Id == id);
-					str.AppendLine("#EXTINF:-1," + (track.Artist == "" ? "アーティスト名なし" : track.Artist.Replace("-", "_")) + " - " + track.Name.Replace("-", "_"));
-					str.AppendLine(relativePath + GetPlaylistItemIds(id) + id + Path.GetExtension(track.Location));
-				}
+			var str = new StringBuilder();
+			foreach (var track in tracks) {
+				str.AppendLine("#EXTINF:-1," + (track.Artist == "" ? "アーティスト名なし" : track.Artist.Replace("-", "_")) + " - " + track.Name.Replace("-", "_"));
+				str.AppendLine(relativePath + GetPlaylistItemIds(track.PersistentID) + track.PersistentID + Path.GetExtension(track.Location));
 			}
 
 			File.WriteAllText(m3uPath, str.ToString());
