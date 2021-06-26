@@ -13,24 +13,16 @@ namespace musikkuLibrary.Libs {
 
 		public string CopyTarget { get; set; }
 
-		public int CurrentTrackId { get; set; }
-
-		public int CurrentPlaylistId { get; set; }
-
 		public List<Track> Tracks { get; set; } = new List<Track>();
 
 		public List<Playlist> Playlists { get; set; } = new List<Playlist>();
 
 		public void RegistTrack(Track t) {
 
-			t.Id = CurrentTrackId++;
-
 			Tracks.Add(t);
 		}
 
 		public void RegistPlaylist(Playlist p) {
-
-			p.Id = CurrentPlaylistId++;
 
 			Playlists.Add(p);
 

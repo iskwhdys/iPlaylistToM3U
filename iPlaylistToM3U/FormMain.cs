@@ -40,14 +40,12 @@ namespace iPlaylistToM3U
 
 		private void btnReadLibraryXml_Click(object sender, EventArgs e) {
 
-			if (String.IsNullOrEmpty(tbLibraryXmlPath.Text)) 
-			{
+			if (String.IsNullOrEmpty(tbLibraryXmlPath.Text)) {
 				MessageBox.Show("「ライブラリ.xmlのパス」が入力されていません。");
 				return;
 			}
-			if (File.Exists(tbLibraryXmlPath.Text) == false)
-			{
-				MessageBox.Show("ファイル「" +  tbLibraryXmlPath.Text + "」が存在しません。");
+			if (File.Exists(tbLibraryXmlPath.Text) == false) {
+				MessageBox.Show("ファイル「" + tbLibraryXmlPath.Text + "」が存在しません。");
 				return;
 			}
 
@@ -62,7 +60,7 @@ namespace iPlaylistToM3U
 			foreach (var child in lib.Playlists.Where(p => p.ParentId == id)) {
 
 				var node = new PlaylistNode(child);
-				
+
 				tnc.Add(node);
 
 				SetPlaylist(lib, node.Nodes, child.Id);
@@ -143,7 +141,6 @@ namespace iPlaylistToM3U
 		private int PlaylistCreateMax;
 		private int PlaylistCreateCount;
 
-		private string MediaRoot;
 		private void btnCopy_Click(object sender, EventArgs e) {
 			if (String.IsNullOrEmpty(tbCopyTarget.Text)) {
 				MessageBox.Show("「コピー先」が入力されていません。");
@@ -160,8 +157,6 @@ namespace iPlaylistToM3U
 			string playlistPath = Path.Combine(tbCopyTarget.Text, "Playlist");
 			Directory.CreateDirectory(Path.Combine(tbCopyTarget.Text, "PlaylistItem"));
 
-			MediaRoot = "/storage/sdcard1/" + tbCopyTarget.Text.Remove(0, 3).Replace("\\", "/") + "/PlaylistItem/";
-
 			var createDirPathList = new List<string>();
 			foreach (PlaylistNode node in tvPlaylist.Nodes) {
 				CreatePlaylistFolderDirectory(createDirPathList, playlistPath, node.Playlist);
@@ -177,8 +172,7 @@ namespace iPlaylistToM3U
 		}
 
 
-		private void btnCancelCopy_Click(object sender, EventArgs e)
-		{
+		private void btnCancelCopy_Click(object sender, EventArgs e) {
 			btnCancelCopy.Enabled = false;
 			bgwCopy.CancelAsync();
 			lblStatus.Text = "停止中...";
@@ -208,7 +202,7 @@ namespace iPlaylistToM3U
 					e.Cancel = true;
 					return;
 				}
-				CreatePlaylistFile(playlistPath, playlist, e);
+				CreatePlaylistFile(playlistPath, "../PlaylistItem/", playlist, e);
 			}
 
 			var copyTrack = new List<int>();
@@ -222,7 +216,7 @@ namespace iPlaylistToM3U
 
 			string playlistItemPath = Path.Combine(tbCopyTarget.Text, "PlaylistItem");
 
-			foreach (var file in Directory.GetFiles(playlistItemPath,"*",SearchOption.AllDirectories)) {
+			foreach (var file in Directory.GetFiles(playlistItemPath, "*", SearchOption.AllDirectories)) {
 				int existFileId = int.Parse(Path.GetFileNameWithoutExtension(file));
 				if (copyTrack.Contains(existFileId) == false) {
 					File.Delete(file);
@@ -231,7 +225,7 @@ namespace iPlaylistToM3U
 					copyTrack.Remove(existFileId);
 				}
 			}
-			
+
 
 			for (int i = 0; i < copyTrack.Count; i++) {
 				int id = copyTrack[i];
@@ -255,41 +249,11 @@ namespace iPlaylistToM3U
 		}
 
 		private string GetPlaylistItemIds(int num) {
-			string id = num.ToString();
-
-			if (id.Length == 5) {
-				return id.Substring(0, 1) + "0000/" + id.Substring(0, 3) + "00/";
-			}
-			else if (id.Length == 4) {
-				return "00000/" +  "0" + id.Substring(0, 2) + "00/";
-			}
-			else if (id.Length == 3) {
-				return "00000/" + "00" + id[0] + "00/";
-			}
-			else if (id.Length < 3) {
-				return "00000/00000/";
-			}
-
-			return "";
+			return String.Join("/", num.ToString().Reverse()) + "/";
 		}
 
 		private string GetPlaylistItemPath(string orgPath, int num) {
-			string id = num.ToString();
-
-			if(id.Length == 5) {
-				return Path.Combine(orgPath, id.Substring(0, 1) + "0000", id.Substring(0, 3) + "00");
-			}
-			else if(id.Length == 4) {
-				return Path.Combine(orgPath, "00000", "0" + id.Substring(0, 2) + "00");
-			}
-			else if(id.Length == 3) {
-				return Path.Combine(orgPath, "00000", "00" + id[0] + "00");
-			}
-			else if(id.Length < 3) {
-				return Path.Combine(orgPath, "00000", "00000");
-			}
-
-			return orgPath;
+			return  Path.Combine(orgPath, Path.Combine( num.ToString().Reverse().Select(c => c.ToString()).ToArray()));
 		}
 
 
@@ -321,7 +285,7 @@ namespace iPlaylistToM3U
 			}
 		}
 
-		private void CreatePlaylistFile(string currentPath, Playlist playlist, DoWorkEventArgs e) {
+		private void CreatePlaylistFile(string currentPath, string relativePath, Playlist playlist, DoWorkEventArgs e) {
 			if (bgwCopy.CancellationPending) {
 				e.Cancel = true;
 				return;
@@ -333,12 +297,12 @@ namespace iPlaylistToM3U
 			string playlistName = RemoveInvalidPathCharacter(playlist.Name);
 
 			var str = new StringBuilder();
-			
+
 			if (playlist.Type == EPlaylistType.Folder) {
 				m3uPath = Path.Combine(currentPath, "_" + playlistName + ".m3u");
 				foreach (var track in GetCheckedPlaylistTrack(playlist)) {
 					str.AppendLine("#EXTINF:-1," + (track.Artist == "" ? "アーティスト名なし" : track.Artist.Replace("-", "_")) + " - " + track.Name.Replace("-", "_"));
-					str.AppendLine(MediaRoot + GetPlaylistItemIds(track.Id) + track.Id + Path.GetExtension(track.Location));
+					str.AppendLine(relativePath + GetPlaylistItemIds(track.Id) + track.Id + Path.GetExtension(track.Location));
 				}
 			}
 			else {
@@ -347,7 +311,7 @@ namespace iPlaylistToM3U
 				foreach (var id in playlist.Tracks) {
 					Track track = library.Tracks.First(t => t.Id == id);
 					str.AppendLine("#EXTINF:-1," + (track.Artist == "" ? "アーティスト名なし" : track.Artist.Replace("-", "_")) + " - " + track.Name.Replace("-", "_"));
-					str.AppendLine(MediaRoot + GetPlaylistItemIds(id) + id + Path.GetExtension(track.Location));
+					str.AppendLine(relativePath + GetPlaylistItemIds(id) + id + Path.GetExtension(track.Location));
 				}
 			}
 
@@ -356,7 +320,7 @@ namespace iPlaylistToM3U
 
 			foreach (int childPId in library.Playlists.First(p => p.Id == playlist.Id).Childs) {
 				var pl = library.Playlists.First(p => p.Id == childPId);
-				CreatePlaylistFile(Path.Combine(currentPath, playlistName), pl, e);
+				CreatePlaylistFile(Path.Combine(currentPath, playlistName), "../" + relativePath, pl, e);
 			}
 		}
 
@@ -369,7 +333,7 @@ namespace iPlaylistToM3U
 						yield return track;
 					}
 				}
-				else if(p.Check) {
+				else if (p.Check) {
 					foreach (int tid in p.Tracks) {
 						Track track = library.Tracks.First(t => t.Id == tid);
 						yield return track;

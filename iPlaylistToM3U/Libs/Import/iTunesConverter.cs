@@ -22,9 +22,10 @@ namespace musikkuLibrary.Libs.Import {
 				if (string.IsNullOrEmpty(val)) continue;
 
 				switch (n.Name) {
+					case "PlaylistID": p.Id = int.Parse(val); break;
 					case "Name": p.Name = val; break;
 					case "Description": p.Description = val; break;
-					case "PlaylistItems": p.Tracks = val.Split(',').Select(spl => int.Parse(spl) * -1).ToList(); break;
+					case "PlaylistItems": p.Tracks = val.Split(',').Select(spl => int.Parse(spl)).ToList(); break;
 					case "Folder": p.Type = EPlaylistType.Folder; break;
 					case "Master": p.Type = EPlaylistType.System; break;
 				}

@@ -198,7 +198,7 @@ namespace musikkuLibrary.Libs {
 			foreach (XmlNode n in node) {
 				string val = n.InnerText;
 				switch (n.Name) {
-					case "TrackID": t.Id = int.Parse(val) * -1; break;
+					case "TrackID": t.Id = int.Parse(val); break;
 					case "Name": t.Name = val; break;
 					case "Artist": t.Artist = val; break;
 					case "AlbumArtist": t.AlbumArtist = val; break;
