@@ -40,19 +40,20 @@ namespace iPlaylistToM3U
 
 		private void btnReadLibraryXml_Click(object sender, EventArgs e) {
 
-			if (File.Exists(tbLibraryXmlPath.Text) == false) {
-				MessageBox.Show(tbLibraryXmlPath.Text + "が存在しません。");
+			if (String.IsNullOrEmpty(tbLibraryXmlPath.Text)) 
+			{
+				MessageBox.Show("「ライブラリ.xmlのパス」が入力されていません。");
+				return;
+			}
+			if (File.Exists(tbLibraryXmlPath.Text) == false)
+			{
+				MessageBox.Show("ファイル「" +  tbLibraryXmlPath.Text + "」が存在しません。");
 				return;
 			}
 
-
 			tvPlaylist.Nodes.Clear();
-			if (library != null) {
-				library = new Library();
-			}
-
-			var im = new ImportManager();
-			im.ImportFromiTunes(tbLibraryXmlPath.Text, library);
+			library = new Library();
+			ImportManager.ImportFromiTunes(tbLibraryXmlPath.Text, library);
 
 			SetPlaylist(library, tvPlaylist.Nodes, -1);
 		}
@@ -144,12 +145,17 @@ namespace iPlaylistToM3U
 
 		private string MediaRoot;
 		private void btnCopy_Click(object sender, EventArgs e) {
+			if (String.IsNullOrEmpty(tbCopyTarget.Text)) {
+				MessageBox.Show("「コピー先」が入力されていません。");
+				return;
+			}
 			if (Directory.Exists(tbCopyTarget.Text) == false) {
-				MessageBox.Show(tbCopyTarget.Text + "が存在しません。");
+				MessageBox.Show("フォルダ「" + tbCopyTarget.Text + "」が存在しません。");
 				return;
 			}
 
 			btnCopy.Enabled = false;
+			btnCancelCopy.Enabled = true;
 
 			string playlistPath = Path.Combine(tbCopyTarget.Text, "Playlist");
 			Directory.CreateDirectory(Path.Combine(tbCopyTarget.Text, "PlaylistItem"));
@@ -170,6 +176,14 @@ namespace iPlaylistToM3U
 			bgwCopy.RunWorkerAsync(new object[] { playlistPath, createDirPathList, rootPlaylistList });
 		}
 
+
+		private void btnCancelCopy_Click(object sender, EventArgs e)
+		{
+			btnCancelCopy.Enabled = false;
+			bgwCopy.CancelAsync();
+			lblStatus.Text = "停止中...";
+		}
+
 		private void bgwCopy_DoWork(object sender, DoWorkEventArgs e) {
 			var playlistPath = (e.Argument as object[])[0] as string;
 			if (Directory.Exists(playlistPath)) {
@@ -180,13 +194,21 @@ namespace iPlaylistToM3U
 			var createDirPath = (e.Argument as object[])[1] as List<string>;
 			for (int i = 0; i < createDirPath.Count; i++) {
 				Directory.CreateDirectory(createDirPath[i]);
-				bgwCopy.ReportProgress((int)(((double)i) / ((double)createDirPath.Count) * 100.0) + 1000);
+				if (bgwCopy.CancellationPending) {
+					e.Cancel = true;
+					return;
+				}
+				bgwCopy.ReportProgress(0, "ステップ(1/3) フォルダ作成中(" + i + "/" + createDirPath.Count + ")...");
 			}
 
 			PlaylistCreateCount = 0;
 			var rootPlaylist = (e.Argument as object[])[2] as List<Playlist>;
 			foreach (var playlist in rootPlaylist) {
-				CreatePlaylistFile(playlistPath, playlist);
+				if (bgwCopy.CancellationPending) {
+					e.Cancel = true;
+					return;
+				}
+				CreatePlaylistFile(playlistPath, playlist, e);
 			}
 
 			var copyTrack = new List<int>();
@@ -223,8 +245,12 @@ namespace iPlaylistToM3U
 				string target = Path.Combine(dstDir, id + Path.GetExtension(track.Location));
 
 				File.Copy(track.Location, target);
-				bgwCopy.ReportProgress((int)(((double)i) / ((double)copyTrack.Count) * 100.0) + 3000);
 
+				if (bgwCopy.CancellationPending) {
+					e.Cancel = true;
+					return;
+				}
+				bgwCopy.ReportProgress(0, "ステップ(3/3) ファイルコピー中(" + i + "/" + copyTrack.Count + ")...");
 			}
 		}
 
@@ -268,14 +294,20 @@ namespace iPlaylistToM3U
 
 
 		private void bgwCopy_ProgressChanged(object sender, ProgressChangedEventArgs e) {
-			lblStatus.Text = e.ProgressPercentage + " / 100";
+			lblStatus.Text = e.UserState.ToString();
 		}
 
 		private void bgwCopy_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
-			lblStatus.Text = "完了";
-			btnCopy.Enabled = true; ;
-
+			if (e.Cancelled) {
+				lblStatus.Text = "中止しました";
+			}
+			else {
+				lblStatus.Text = "完了";
+			}
+			btnCopy.Enabled = true;
+			btnCancelCopy.Enabled = false;
 		}
+
 		private void CreatePlaylistFolderDirectory(List<string> createDirPath, string currentPath, Playlist playlist) {
 			if (playlist.Check == false) return;
 			if (playlist.Type != EPlaylistType.Folder) return;
@@ -283,14 +315,18 @@ namespace iPlaylistToM3U
 			string createPath = Path.Combine(currentPath, RemoveInvalidPathCharacter(playlist.Name));
 			createDirPath.Add(createPath);
 
-
 			foreach (int childPId in library.Playlists.First(p => p.Id == playlist.Id).Childs) {
 				var pl = library.Playlists.First(p => p.Id == childPId);
 				CreatePlaylistFolderDirectory(createDirPath, createPath, pl);
 			}
 		}
 
-		private void CreatePlaylistFile(string currentPath, Playlist playlist) {
+		private void CreatePlaylistFile(string currentPath, Playlist playlist, DoWorkEventArgs e) {
+			if (bgwCopy.CancellationPending) {
+				e.Cancel = true;
+				return;
+			}
+			bgwCopy.ReportProgress(0, "ステップ(2/3) プレイリスト作成中(" + PlaylistCreateCount + "/" + PlaylistCreateMax + ")...");
 
 			if (playlist.Check == false) return;
 			string m3uPath;
@@ -317,13 +353,11 @@ namespace iPlaylistToM3U
 
 			File.WriteAllText(m3uPath, str.ToString());
 			PlaylistCreateCount++;
-			bgwCopy.ReportProgress((int)(((double)PlaylistCreateCount) / ((double)PlaylistCreateMax) * 100.0) + 2000);
 
 			foreach (int childPId in library.Playlists.First(p => p.Id == playlist.Id).Childs) {
 				var pl = library.Playlists.First(p => p.Id == childPId);
-				CreatePlaylistFile(Path.Combine(currentPath, playlistName), pl);
+				CreatePlaylistFile(Path.Combine(currentPath, playlistName), pl, e);
 			}
-
 		}
 
 		private IEnumerable<Track> GetCheckedPlaylistTrack(Playlist playlist) {
@@ -340,7 +374,6 @@ namespace iPlaylistToM3U
 						Track track = library.Tracks.First(t => t.Id == tid);
 						yield return track;
 					}
-
 				}
 			}
 		}
@@ -351,22 +384,6 @@ namespace iPlaylistToM3U
 			var converted = string.Concat(
 			  path.Select(c => invalidChars.Contains(c) ? '_' : c));
 			return converted;
-
-		}
-
-		private void button1_Click(object sender, EventArgs e) {
-			string baseDir = Path.Combine(tbCopyTarget.Text, "PlaylistItem");
-			var files = Directory.GetFiles(baseDir, "*.*");
-			foreach (var item in files) {
-				int id = int.Parse( Path.GetFileNameWithoutExtension(item));
-
-				string dstDir = GetPlaylistItemPath(baseDir, id);
-
-				string target = Path.Combine(dstDir, Path.GetFileName(item));
-
-				File.Move(item, target);
-
-			}
 		}
 	}
 }

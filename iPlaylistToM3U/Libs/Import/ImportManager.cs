@@ -11,9 +11,9 @@ using System.Xml.Serialization;
 
 namespace musikkuLibrary.Libs.Import {
 
-	public class ImportManager {
+	public static class ImportManager {
 
-		public void ImportFromiTunes(string xmlPath, Library lib) {
+		public static void ImportFromiTunes(string xmlPath, Library lib) {
 
 			XmlDocument xml = new XmlDocument();
 			xml.Load(xmlPath);
