@@ -49,26 +49,49 @@ namespace iPlaylistToM3U
 				return;
 			}
 
+			var playlistStatus = GetPlaylistTreeStatus(tvPlaylist.Nodes);
 			tvPlaylist.Nodes.Clear();
 			library = new Library();
 			ImportManager.ImportFromiTunes(tbLibraryXmlPath.Text, library);
-
-			SetPlaylist(library, tvPlaylist.Nodes, -1);
+			SetPlaylist(library, tvPlaylist.Nodes, -1, playlistStatus);
 		}
 
-		private void SetPlaylist(Library lib, TreeNodeCollection tnc, int id) {
+		private void SetPlaylist(Library lib, TreeNodeCollection tnc, int id, Dictionary<int, bool[]> playlistStatus = null) {
 			foreach (var child in lib.Playlists.Where(p => p.ParentId == id)) {
+
+				if(playlistStatus != null && playlistStatus.ContainsKey(child.Id)){
+					child.Check = playlistStatus[child.Id][0];
+					child.Open = playlistStatus[child.Id][1];
+				}
 
 				var node = new PlaylistNode(child);
 
 				tnc.Add(node);
 
-				SetPlaylist(lib, node.Nodes, child.Id);
+				SetPlaylist(lib, node.Nodes, child.Id, playlistStatus);
 
 				if (child.Open) {
 					node.Expand();
 				}
 			}
+		}
+
+		/// <summary>
+		/// TreeViewのチェック状況を取得し、連想配列に入れて返却するメソッド。SetPlaylistCheckedで渡すことでチェック状態を復元する。
+		/// </summary>
+		/// <param name="tnc">チェック状態を取得したいTreeView.Nodesを指定する。</param>
+		/// <param name="playlistChecked">初回はnullで呼び出す。再帰で呼び出す際に指定される。</param>
+		/// <returns>[int] PlaylistId, [bool]チェック状態の連想配列</returns>
+		private Dictionary<int, bool[]> GetPlaylistTreeStatus(TreeNodeCollection tnc, Dictionary<int, bool[]> playlistStatus = null) {
+			if(playlistStatus == null) {
+				playlistStatus = new Dictionary<int, bool[]>();
+			}
+			foreach(TreeNode node in tnc) {
+				var p = (node as PlaylistNode).Playlist;
+				playlistStatus.Add(p.Id, new bool[] { node.Checked, p.Open });
+				GetPlaylistTreeStatus(node.Nodes, playlistStatus);
+			}
+			return playlistStatus;
 		}
 
 		private void tvPlaylist_AfterExpand(object sender, TreeViewEventArgs e) {
