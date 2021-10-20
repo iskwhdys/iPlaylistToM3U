@@ -64,23 +64,7 @@ namespace musikkuLibrary.Libs.Import {
 			var trackNode = ixc.GetConvertedTracksXmlNode(xml);
 			foreach (XmlNode node in trackNode) {
 				var t = Track.ConvertFromiTunes(node);
-				int orgId = t.Id;
 				lib.RegistTrack(t);
-
-				foreach (var p in pList.Where(pl => pl.Tracks != null)) {
-					int first = p.Tracks.IndexOf(orgId);
-					if (first == -1) continue;
-					int last = p.Tracks.LastIndexOf(orgId);
-					if (first == last) {
-						p.Tracks[first] = t.Id;
-					}else {
-						for (int i = first; i < last + 1; i++) {
-							if (p.Tracks[i] == orgId) {
-								p.Tracks[i] = t.Id;
-							}
-						}
-					}
-				}
 			}
 		}
 	}
