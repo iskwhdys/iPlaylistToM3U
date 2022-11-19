@@ -13,6 +13,7 @@ using System.IO;
 using musikkuLibrary.Libs;
 using musikkuLibrary.Libs.Import;
 using iPlaylistToM3U.Commons;
+using System.Security;
 
 namespace iPlaylistToM3U
 {
@@ -36,6 +37,10 @@ namespace iPlaylistToM3U
 
 			tbLibraryXmlPath.Text = library.TargetLibraryXmlPath;
 			tbCopyTarget.Text = library.CopyTarget;
+		}
+
+		private void FormMain_Load(object sender, EventArgs e) {
+			cmbExportFileType.SelectedIndex = 0;
 		}
 
 		private void btnReadLibraryXml_Click(object sender, EventArgs e) {
@@ -225,7 +230,13 @@ namespace iPlaylistToM3U
 					e.Cancel = true;
 					return;
 				}
-				CreatePlaylistFile(playlistPath, "../PlaylistItem/", playlist, e);
+				
+				if (ExportFileType == 0) {
+					CreatePlaylistFileXspf(playlistPath, "../PlaylistItem/", playlist, e);
+				}
+				else if (ExportFileType == 1) {
+					CreatePlaylistFile(playlistPath, "../PlaylistItem/", playlist, e);
+				}
 			}
 
 			var copyTrack = new List<string>();
@@ -345,6 +356,80 @@ namespace iPlaylistToM3U
 			}
 		}
 
+		private void CreatePlaylistFileXspf(string currentPath, string relativePath, Playlist playlist, DoWorkEventArgs e) {
+			if (bgwCopy.CancellationPending) {
+				e.Cancel = true;
+				return;
+			}
+			bgwCopy.ReportProgress(0, "ステップ(2/3) プレイリスト作成中(" + PlaylistCreateCount + "/" + PlaylistCreateMax + ")...");
+
+			if (playlist.Check == false) return;
+
+			string playlistName = RemoveInvalidPathCharacter(playlist.Name);
+			string xspfPath;
+			List<Track> tracks;
+
+			if (playlist.Type == EPlaylistType.Folder) {
+				xspfPath = Path.Combine(currentPath, "_" + playlistName + ".xspf");
+				tracks = GetCheckedPlaylistTrack(playlist).ToList();
+			}
+			else {
+				xspfPath = Path.Combine(currentPath, playlistName + ".xspf");
+				tracks = playlist.Tracks.Select(id => library.Tracks.First(t => t.Id == id)).ToList();
+			}
+
+			var str = new StringBuilder();
+
+			str.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+			str.AppendLine("<playlist xmlns=\"http://xspf.org/ns/0/\" xmlns:vlc=\"http://www.videolan.org/vlc/playlist/ns/0/\" version=\"1\">");
+			str.AppendLine("<title>" + SecurityElement.Escape(playlist.Name) + "</title>");
+			str.AppendLine("<trackList>");
+
+			for (int i = 0; i < tracks.Count; i++) {
+				var track = tracks[i];
+
+				str.AppendLine("<track>");
+
+				str.Append("<location>")
+					.Append(SecurityElement.Escape(relativePath + GetPlaylistItemIds(track.PersistentID) + track.PersistentID + Path.GetExtension(track.Location)))
+					.AppendLine("</location>");
+
+				str.Append("<title>").Append(SecurityElement.Escape(track.Name)).AppendLine("</title>");
+				str.Append("<creator>").Append(SecurityElement.Escape(track.Artist)).AppendLine("</creator>");
+				str.Append("<album>").Append(SecurityElement.Escape(track.Album)).AppendLine("</album>");
+				str.Append("<trackNum>").Append(track.TrackNumber).AppendLine("</trackNum>");
+				str.Append("<duration>").Append(track.TotalTime).AppendLine("</duration>");
+
+				str.Append("<extension application=\"http://www.videolan.org/vlc/playlist/0\">")
+					.Append("<vlc:id>")
+					.Append(i)
+					.Append("</vlc:id>")
+					.AppendLine("</extension>");
+
+				str.AppendLine("</track>");
+			}
+			str.AppendLine("</trackList>");
+
+			str.AppendLine("<extension application=\"http://www.videolan.org/vlc/playlist/0\">");
+			for (int i = 0; i < tracks.Count; i++) {
+				str.Append("<vlc:item tid=\"").Append(i).Append("\"/>");
+			}
+			str.AppendLine("</extension>");
+
+			str.AppendLine("</playlist>");
+
+
+			File.WriteAllText(xspfPath, str.ToString());
+			PlaylistCreateCount++;
+
+			foreach (int childPId in library.Playlists.First(p => p.Id == playlist.Id).Childs) {
+				var pl = library.Playlists.First(p => p.Id == childPId);
+				CreatePlaylistFileXspf(Path.Combine(currentPath, playlistName), "../" + relativePath, pl, e);
+			}
+		}
+
+
+
 		private IEnumerable<Track> GetCheckedPlaylistTrack(Playlist playlist) {
 
 			foreach (int pid in playlist.Childs) {
@@ -369,6 +454,11 @@ namespace iPlaylistToM3U
 			var converted = string.Concat(
 			  path.Select(c => invalidChars.Contains(c) ? '_' : c));
 			return converted;
+		}
+
+		private int ExportFileType;
+		private void cmbExportFileType_SelectedIndexChanged(object sender, EventArgs e) {
+			ExportFileType = ((ComboBox)sender).SelectedIndex;
 		}
 	}
 }

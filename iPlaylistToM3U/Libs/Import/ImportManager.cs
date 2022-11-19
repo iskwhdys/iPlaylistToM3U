@@ -63,8 +63,7 @@ namespace musikkuLibrary.Libs.Import {
 			
 			var trackNode = ixc.GetConvertedTracksXmlNode(xml);
 			foreach (XmlNode node in trackNode) {
-				var t = Track.ConvertFromiTunes(node);
-				lib.RegistTrack(t);
+				lib.RegistTrack(Track.ConvertFromiTunes(node));
 			}
 		}
 	}

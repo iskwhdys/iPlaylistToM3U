@@ -48,6 +48,7 @@
 			this.btnOpenCopyTarget = new System.Windows.Forms.Button();
 			this.ofdTargetFolder = new System.Windows.Forms.FolderBrowserDialog();
 			this.btnCancelCopy = new System.Windows.Forms.Button();
+			this.cmbExportFileType = new System.Windows.Forms.ComboBox();
 			this.panel1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
@@ -211,13 +212,13 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.tbCopyTarget.Location = new System.Drawing.Point(62, 412);
 			this.tbCopyTarget.Name = "tbCopyTarget";
-			this.tbCopyTarget.Size = new System.Drawing.Size(440, 19);
+			this.tbCopyTarget.Size = new System.Drawing.Size(337, 19);
 			this.tbCopyTarget.TabIndex = 6;
 			// 
 			// btnOpenCopyTarget
 			// 
 			this.btnOpenCopyTarget.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.btnOpenCopyTarget.Location = new System.Drawing.Point(508, 410);
+			this.btnOpenCopyTarget.Location = new System.Drawing.Point(405, 410);
 			this.btnOpenCopyTarget.Name = "btnOpenCopyTarget";
 			this.btnOpenCopyTarget.Size = new System.Drawing.Size(23, 23);
 			this.btnOpenCopyTarget.TabIndex = 7;
@@ -241,11 +242,26 @@
 			this.btnCancelCopy.UseVisualStyleBackColor = true;
 			this.btnCancelCopy.Click += new System.EventHandler(this.btnCancelCopy_Click);
 			// 
+			// cmbExportFileType
+			// 
+			this.cmbExportFileType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.cmbExportFileType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.cmbExportFileType.FormattingEnabled = true;
+			this.cmbExportFileType.Items.AddRange(new object[] {
+            "VLC(*.xspf)",
+            "汎用(*.m3u)"});
+			this.cmbExportFileType.Location = new System.Drawing.Point(434, 412);
+			this.cmbExportFileType.Name = "cmbExportFileType";
+			this.cmbExportFileType.Size = new System.Drawing.Size(97, 20);
+			this.cmbExportFileType.TabIndex = 10;
+			this.cmbExportFileType.SelectedIndexChanged += new System.EventHandler(this.cmbExportFileType_SelectedIndexChanged);
+			// 
 			// FormMain
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(624, 471);
+			this.Controls.Add(this.cmbExportFileType);
 			this.Controls.Add(this.btnCancelCopy);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.lblStatus);
@@ -260,6 +276,7 @@
 			this.Name = "FormMain";
 			this.Text = "iPlaylistToM3U";
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormMain_FormClosing);
+			this.Load += new System.EventHandler(this.FormMain_Load);
 			this.panel1.ResumeLayout(false);
 			this.splitContainer1.Panel1.ResumeLayout(false);
 			this.splitContainer1.Panel2.ResumeLayout(false);
@@ -291,6 +308,7 @@
 		private System.Windows.Forms.Button btnOpenCopyTarget;
 		private System.Windows.Forms.FolderBrowserDialog ofdTargetFolder;
 		private System.Windows.Forms.Button btnCancelCopy;
+		private System.Windows.Forms.ComboBox cmbExportFileType;
 	}
 }
 
